@@ -1,0 +1,18 @@
+spring:
+  profiles:
+    active: production
+  application:
+    name: myappsec
+  cloud:
+    vault:
+      token: s.48kx2SBk0HuicKmXPvFJ1K9K
+      uri: http://localhost:8200
+      kv:
+        enabled: true
+        application-name: myappsec/test
+      mysql:
+        enabled: true
+        role: myapp-role
+        backend: database
+        username-property: spring.datasource.username
+        password-property: spring.datasource.password

@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: vault-auth
+---
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: my-app
+spec:
+  template:
+    metadata:
+      labels:
+        app: my-app
+        tier: backend
+    spec:
+      serviceAccountName: vault-auth
+      volumes:
+      - name: shared-data
+        emptyDir: {}
+      - name: test-volume
+        hostPath:
+          # mount directory to host
+          path: /Users/salvatore/dev/personal/vault-example-web/src/main/resources/conf.k8s/initcontainer
+          # this field is optional
+          type: Directory
+      initContainers:
+      - name: vault-init
+        image: wealthwizardsengineering/kube-vault-auth-init
+        command: ["/bin/sh", "-c", "echo start2; chmod u+x /opt/script/vault/init-token.sh;/opt/script/vault/init-token.sh"]
+        env:
+        - name: KUBERNETES_AUTH_PATH
+          value: kubernetes
+        - name: VAULT_ADDR
+          value: http://10.0.2.15:8200
+        - name: VAULT_LOGIN_ROLE
+          value: my-app-role
+        - name: SECRET_DATABASEUSER
+          value: "secret/data/myappsec/config?username"
+        - name: SECRET_DATABASEPASSWORD
+          value: "secret/data/myappsec/config?password"
+        volumeMounts:
+        - name: shared-data
+          mountPath: /env
+        - name: test-volume
+          mountPath: /opt/script/vault
+      containers:
+      - name: my-app
+        image: alpine:3.7
+        command: ["/bin/sh", "-c", "less /env/variables"]
+        volumeMounts:
+        - name: shared-data
+          mountPath: /env
